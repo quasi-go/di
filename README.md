@@ -11,6 +11,29 @@ A tiny, elegant dependency injection library for golang.
 import "github.com/quasi-go/di"
 ```
 
+### Example Types
+
+Here are the types from our example:
+
+```go
+type A struct {
+	Name string
+}
+
+type B struct {
+	Type       string
+	PtrDep     *A
+	ValueDep   A
+	privateDep *A
+}
+
+type C struct {
+	B
+}
+
+type I interface {} // A, B & C all implement I
+```
+
 ### BindInstance
 
 `BindInstance[T](inst)` bind type `T` to the passed `inst`.
@@ -31,6 +54,17 @@ resolvedA1, err := di.Resolve[A]()
 - `resolvedA` is a `*A`
 - `resolvedA` == `a`.
 
+### Initialize
+
+If a struct has a method `Initialize()`, it will automatically be called immediately after
+an instance of the type is created.
+
+```go
+func (b *B) Initialize() {
+	b.Type = "None"
+}
+```
+
 ### Implicit Resolution
 
 Even without explicitly binding a type, the library can implicitly build new structs
@@ -41,7 +75,7 @@ resolvedB, _ := di.Resolve[B]()
 
 - Private members are not set by the library, so `resolvedB.privateDep` === nil
 - `resolvedB` is a `*B`
-- `resolvedB.Type` == "None" from the call to `B.initialize()`
+- `resolvedB.Type` == "None" from the call to `B.Initialize()`
 - `resolvedB.PtrDep` === `a`
 - `resolvedB.ValueDep` == `*a`
 

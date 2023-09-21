@@ -11,10 +11,6 @@ type A struct {
 	Name string
 }
 
-type I interface {
-	GetType() string
-}
-
 type B struct {
 	Type       string
 	PtrDep     *A
@@ -28,14 +24,6 @@ func (b *B) Initialize() {
 	b.Type = "None"
 }
 
-// B implements I
-
-func (b *B) GetType() string {
-	return b.Type
-}
-
-// C also implements I via B
-
 type C struct {
 	B
 }
@@ -43,6 +31,10 @@ type C struct {
 func (c *C) Initialize() {
 	c.Type = "Embedded"
 }
+
+// All structs implement I
+
+type I interface{}
 
 func TestAll(t *testing.T) {
 	// `BindInstance[T](inst)` bind type `T` to the passed `inst`.
