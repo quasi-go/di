@@ -15,7 +15,7 @@ type typeRule struct {
 }
 
 func (r *typeRule) Resolve(c *Container) (reflect.Value, error) {
-	return c.Resolve(r.typeTo)
+	return c.ResolveType(r.typeTo)
 }
 
 type instanceRule struct {
@@ -44,7 +44,7 @@ func (r *factoryRule) Resolve(c *Container) (reflect.Value, error) {
 
 	for i := 0; i < funcType.NumIn(); i++ {
 		argType := funcType.In(i)
-		arg, err := c.Resolve(argType)
+		arg, err := c.ResolveType(argType)
 
 		if err != nil {
 			message := fmt.Sprintf("could not resolve argument #%d of callback; type %s could not be resolved: %s", i, argType, err)
@@ -126,7 +126,7 @@ func (c *Container) GetRule(key Id) Rule {
 	return value
 }
 
-func (c *Container) Resolve(typeInfo reflect.Type) (reflect.Value, error) {
+func (c *Container) ResolveType(typeInfo reflect.Type) (reflect.Value, error) {
 	if typeInfo.Kind() == reflect.Pointer {
 		typeInfo = typeInfo.Elem()
 	}
@@ -134,7 +134,7 @@ func (c *Container) Resolve(typeInfo reflect.Type) (reflect.Value, error) {
 	typeId := Id(typeInfo.String())
 
 	if !c.HasRule(typeId) {
-		built, err := c.Build(typeInfo)
+		built, err := c.BuildType(typeInfo)
 
 		if err != nil {
 			return reflect.Zero(typeInfo), err
@@ -146,7 +146,7 @@ func (c *Container) Resolve(typeInfo reflect.Type) (reflect.Value, error) {
 	return c.GetRule(typeId).Resolve(c)
 }
 
-func (c *Container) Build(typeInfo reflect.Type) (reflect.Value, error) {
+func (c *Container) BuildType(typeInfo reflect.Type) (reflect.Value, error) {
 	if typeInfo.Kind() != reflect.Struct {
 		errorMessage := fmt.Sprintf("Only structs can be built, %s is a %s", typeInfo, typeInfo.Kind())
 		return reflect.Zero(typeInfo), errors.New(errorMessage)
@@ -180,7 +180,7 @@ func (c *Container) Build(typeInfo reflect.Type) (reflect.Value, error) {
 			childType = childType.Elem()
 		}
 
-		builtChild, err := c.Resolve(childType)
+		builtChild, err := c.ResolveType(childType)
 
 		if err != nil {
 			return reflect.Zero(typeInfo), err

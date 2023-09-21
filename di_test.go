@@ -41,7 +41,7 @@ type ITest interface {
 }
 
 func TestResolve(t *testing.T) {
-	ResetContainer()
+	Reset()
 
 	thing1, err := Resolve[Thing1]()
 
@@ -77,7 +77,7 @@ func TestResolve(t *testing.T) {
 }
 
 func TestBindInstance(t *testing.T) {
-	ResetContainer()
+	Reset()
 
 	thing1 := &Thing1{name: "THING1"}
 	BindInstance(thing1)
@@ -109,7 +109,7 @@ func TestBindInstance(t *testing.T) {
 }
 
 func TestBindImpl(t *testing.T) {
-	ResetContainer()
+	Reset()
 
 	BindImpl[ITest](&Thing1Alt{subname: "subname"})
 	object1, err := ResolveImpl[ITest]()
@@ -128,7 +128,7 @@ func TestBindImpl(t *testing.T) {
 }
 
 func TestBindType(t *testing.T) {
-	ResetContainer()
+	Reset()
 
 	thing1 := &Thing1Alt{subname: "embedded"}
 	BindInstance(thing1)
@@ -150,7 +150,7 @@ func TestBindType(t *testing.T) {
 }
 
 func TestBindFactory(t *testing.T) {
-	ResetContainer()
+	Reset()
 
 	thing1 := &Thing1{name: "initial"}
 	BindInstance(thing1)
@@ -195,7 +195,7 @@ func TestBindFactory(t *testing.T) {
 }
 
 func TestBindProvider(t *testing.T) {
-	ResetContainer()
+	Reset()
 
 	thing1 := &Thing1{name: "initial"}
 	BindInstance(thing1)

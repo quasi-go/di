@@ -36,7 +36,7 @@ func Resolve[T any]() (*T, error) {
 	c := GetContainer()
 
 	typeInfo := Type[T]()
-	built, err := c.Resolve(typeInfo)
+	built, err := c.ResolveType(typeInfo)
 
 	if err != nil {
 		return nil, err
@@ -66,7 +66,7 @@ func ResolveImpl[T any]() (T, error) {
 	c := GetContainer()
 
 	typeInfo := Type[T]()
-	built, err := c.Resolve(typeInfo)
+	built, err := c.ResolveType(typeInfo)
 
 	if err != nil {
 		return *new(T), err
@@ -132,3 +132,6 @@ func BindProvider(callback any) {
 	)
 }
 
+func Reset() {
+	ResetContainer()
+}
