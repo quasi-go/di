@@ -133,5 +133,5 @@ func BindProvider(callback any) {
 }
 
 func Reset() {
-	ResetContainer()
+	resetContainer()
 }

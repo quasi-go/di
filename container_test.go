@@ -6,7 +6,7 @@ import (
 )
 
 func TestGetSetContainer(t *testing.T) {
-	ResetContainer()
+	resetContainer()
 	defaultContainer := GetContainer()
 
 	thing1 := Thing1{name: "THING1"}

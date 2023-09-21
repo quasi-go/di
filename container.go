@@ -108,7 +108,7 @@ func NewContainer() *Container {
 	}
 }
 
-func ResetContainer() {
+func resetContainer() {
 	SetContainer(NewContainer())
 }
 
