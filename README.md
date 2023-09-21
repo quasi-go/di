@@ -48,7 +48,7 @@ di.BindInstance[A](a)
 `di.Instance[A]()` retrieves the same instance `a` from above
 
 ```go
-resolvedA1, err := di.Instance[A]()
+resolvedA1 := di.Instance[A]()
 ```
 
 - `resolvedA` is a `*A`
