@@ -132,6 +132,26 @@ func BindProvider(callback any) {
 	)
 }
 
+func Instance[T any]() *T {
+	inst, err := Resolve[T]()
+
+	if err != nil {
+		panic(err)
+	}
+
+	return inst
+}
+
+func Impl[T any]() T {
+	inst, err := ResolveImpl[T]()
+
+	if err != nil {
+		panic(err)
+	}
+
+	return inst
+}
+
 func Reset() {
 	resetContainer()
 }
