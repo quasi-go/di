@@ -83,10 +83,7 @@ func BindInstance[T any](instance *T) {
 }
 
 func BindImpl[T any, U any](impl *U) {
-	if !Type[*U]().Implements(Type[T]()) {
-		message := fmt.Sprintf("*%s does not implement %s", Type[U](), Type[T]())
-		panic(message)
-	}
+	validateImpl[T, U]()
 
 	GetContainer().SetRule(
 		TypeId[T](),
@@ -95,10 +92,7 @@ func BindImpl[T any, U any](impl *U) {
 }
 
 func BindType[T any, U any]() {
-	if !Type[*U]().Implements(Type[T]()) {
-		message := fmt.Sprintf("*%s does not implement %s", Type[U](), Type[T]())
-		panic(message)
-	}
+	validateImpl[T, U]()
 
 	GetContainer().SetRule(
 		TypeId[T](),
@@ -154,4 +148,16 @@ func Impl[T any]() T {
 
 func Reset() {
 	resetContainer()
+}
+
+func validateImpl[T any, U any]() {
+	if Type[T]().Kind() != reflect.Interface {
+		message := fmt.Sprintf("*%s must be an interface", Type[T]())
+		panic(message)
+	}
+
+	if !Type[*U]().Implements(Type[T]()) {
+		message := fmt.Sprintf("*%s does not implement %s", Type[U](), Type[T]())
+		panic(message)
+	}
 }

@@ -76,6 +76,29 @@ func TestResolve(t *testing.T) {
 	}
 }
 
+func TestInstance(t *testing.T) {
+	Reset()
+
+	inst := Instance[Thing1]()
+	resolved, _ := Resolve[Thing1]()
+
+	if inst != resolved {
+		t.Error("Instance[T]() and Resolve[]() should return the same object")
+	}
+}
+
+func TestImpl(t *testing.T) {
+	Reset()
+
+	BindType[ITest, Thing1Alt]()
+	impl := Impl[ITest]()
+	resolved, _ := ResolveImpl[ITest]()
+
+	if impl != resolved {
+		t.Error("Instance[T]() and Resolve[]() should return the same object")
+	}
+}
+
 func TestBindInstance(t *testing.T) {
 	Reset()
 
@@ -127,6 +150,16 @@ func TestBindImpl(t *testing.T) {
 	}
 }
 
+func TestBindImplFails(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+		}
+	}()
+
+	BindImpl[Thing1](&Thing1Alt{})
+	t.Error("expected panic")
+}
+
 func TestBindType(t *testing.T) {
 	Reset()
 
@@ -147,6 +180,16 @@ func TestBindType(t *testing.T) {
 	if object1.test() != "embedded" {
 		t.Error("Invalid name", object1.test())
 	}
+}
+
+func TestBindTypeFails(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+		}
+	}()
+
+	BindType[Thing1, Thing1Alt]()
+	t.Error("expected panic")
 }
 
 func TestBindFactory(t *testing.T) {
