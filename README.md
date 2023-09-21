@@ -152,5 +152,5 @@ The example test above is implemented here: [example/tothepoint_test.go](example
 
 See [example/example_test.go](example/example_test.go) to see and run additional examples.
 
-[example/README.md](example/README.md) provides the additional examples in a markdown document.
+[example/README.md](example/EXAMPLES.md) provides the additional examples in a markdown document.
 
