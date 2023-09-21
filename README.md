@@ -352,7 +352,7 @@ func TestBindProvider(t *testing.T) {
 BindFactory(func) works exactly the same as BindProvider(func), with the exception that it runs
 every time an instance is resolved.
 
-BELOW, built2 and built2 point to different instances of `SimpleStruct`, each with its own incremented `.Name`.
+Below, built2 and built2 point to different instances of `SimpleStruct`, each with its own incremented `.Name`.
 
 ```go
 func TestBindFactory(t *testing.T) {
@@ -364,8 +364,6 @@ func TestBindFactory(t *testing.T) {
 			Name: fmt.Sprintf("%d times", count),
 		}, nil
 	})
-
-	// 
 
 	built1, _ := di.Resolve[SimpleStruct]()
 	built2, _ := di.Resolve[SimpleStruct]()
