@@ -31,7 +31,7 @@ type Thing3 struct {
 	Embed1
 	Thing1p2        *Thing1
 	Thing2m         Thing2
-	Thing1NoInjectM Thing1
+	Thing1NoInjectM *Thing1 `inject:"@noinject"`
 	SomeNumberm     int
 	Itestm          ITest
 }
@@ -265,5 +265,13 @@ func TestBindProvider(t *testing.T) {
 
 	if alt != alt2 {
 		t.Error("Provider should return the same value each time")
+	}
+}
+
+func TestNoInject(t *testing.T) {
+	a := Instance[Thing3]()
+
+	if a.Thing1NoInjectM != nil {
+		t.Error("Thing1NoInjectM should be nil")
 	}
 }
