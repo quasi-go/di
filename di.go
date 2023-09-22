@@ -6,7 +6,7 @@ import (
 	"reflect"
 )
 
-type Initializeable interface {
+type Initializable interface {
 	Initialize()
 }
 

@@ -238,7 +238,7 @@ type InitializedStruct struct {
 }
 
 // If we have setup that needs to be performed after the construction of the object,
-// we can implement di.Initializeable, an interface that consists of a single method
+// we can implement di.Initializable, an interface that consists of a single method
 // `Initialize()` that accepts no parameters and has no return value. This method
 // will be called immediately after an instance of the type is built, but not necessarily
 // each time `Resolve[T]()` or `ResolveImpl[I]()` is called.

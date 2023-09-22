@@ -193,7 +193,7 @@ func (c *Container) BuildType(typeInfo reflect.Type) (reflect.Value, error) {
 		}
 	}
 
-	if structPtr.Type().Implements(Type[Initializeable]()) {
+	if structPtr.Type().Implements(Type[Initializable]()) {
 		structPtr.MethodByName("Initialize").Call([]reflect.Value{})
 	}
 
