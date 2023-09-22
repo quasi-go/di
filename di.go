@@ -19,12 +19,12 @@ func Convert[T any](value reflect.Value) (*T, error) {
 	objectPtr := value.Interface()
 	typeInfo := Type[T]()
 
-	if typeInfo.Kind() == reflect.Struct {
+	if typeInfo.Kind() != reflect.Interface {
 		if result, ok := objectPtr.(*T); ok {
 			return result, nil
 		}
 	} else {
-		errorMessage := fmt.Sprintf("invalid type %s (%s), Convert expects a struct", value.Type(), value.Kind())
+		errorMessage := fmt.Sprintf("invalid type %s (%s), Convert must not be an interface", value.Type(), value.Kind())
 		return nil, errors.New(errorMessage)
 	}
 
@@ -101,7 +101,7 @@ func BindType[T any, U any]() {
 }
 
 func BindFactory(callback any) {
-	returnType, err := GetContainer().validateFactoryCallback(callback)
+	returnType, err := validateFactoryCallback(callback)
 
 	if err != nil {
 		panic(err.Error())
@@ -114,7 +114,7 @@ func BindFactory(callback any) {
 }
 
 func BindProvider(callback any) {
-	returnType, err := GetContainer().validateFactoryCallback(callback)
+	returnType, err := validateFactoryCallback(callback)
 
 	if err != nil {
 		panic(err.Error())
@@ -148,6 +148,47 @@ func Impl[T any]() T {
 
 func Reset() {
 	resetContainer()
+}
+
+func Call[T any](callback any) (*T, error) {
+	callbackType := reflect.TypeOf(callback)
+	nReturn := callbackType.NumOut()
+
+	if nReturn != 2 || callbackType.Out(0) != Type[*T]() || callbackType.Out(1) != Type[error]() {
+		return new(T), errors.New("the callback must return a *" + Type[T]().String() + "and an error")
+	}
+
+	returnValues, err := GetContainer().Call(callback)
+
+	if err != nil {
+		return new(T), err
+	}
+
+	convertedT, err := Convert[T](returnValues[0])
+
+	if err != nil {
+		return new(T), err
+	}
+
+	returnedErr := returnValues[1].Interface()
+
+	if returnedErr == nil {
+		return convertedT, nil
+	}
+
+	if convertedErr, ok := returnedErr.(error); ok {
+		return convertedT, convertedErr
+	}
+
+	return new(T), errors.New("returned value could not be converted to error")
+}
+
+func Invoke(callback any) {
+	_, err := GetContainer().Call(callback)
+
+	if err != nil {
+		panic(err)
+	}
 }
 
 func validateImpl[T any, U any]() {

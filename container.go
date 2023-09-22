@@ -31,34 +31,17 @@ type factoryRule struct {
 }
 
 func (r *factoryRule) Resolve(c *Container) (reflect.Value, error) {
-	_, err := c.validateFactoryCallback(r.callback)
+	_, err := validateFactoryCallback(r.callback)
 
 	if err != nil {
 		return reflect.Value{}, err
 	}
 
-	funcType := reflect.TypeOf(r.callback)
-	funcValue := reflect.ValueOf(r.callback)
+	returnValue, err := c.Call(r.callback)
 
-	var args []reflect.Value
-
-	for i := 0; i < funcType.NumIn(); i++ {
-		argType := funcType.In(i)
-		arg, err := c.ResolveType(argType)
-
-		if err != nil {
-			message := fmt.Sprintf("could not resolve argument #%d of callback; type %s could not be resolved: %s", i, argType, err)
-			return reflect.Value{}, errors.New(message)
-		}
-
-		if argType.Kind() != reflect.Pointer && argType.Kind() != reflect.Interface {
-			arg = arg.Elem()
-		}
-
-		args = append(args, arg)
+	if err != nil {
+		return reflect.Value{}, err
 	}
-
-	returnValue := funcValue.Call(args)
 
 	if len(returnValue) != 2 {
 		return reflect.Value{}, errors.New("callback must return one value and an error")
@@ -147,12 +130,12 @@ func (c *Container) ResolveType(typeInfo reflect.Type) (reflect.Value, error) {
 }
 
 func (c *Container) BuildType(typeInfo reflect.Type) (reflect.Value, error) {
+	structPtr := reflect.New(typeInfo)
+
 	if typeInfo.Kind() != reflect.Struct {
-		errorMessage := fmt.Sprintf("Only structs can be built, %s is a %s", typeInfo, typeInfo.Kind())
-		return reflect.Zero(typeInfo), errors.New(errorMessage)
+		return structPtr, nil
 	}
 
-	structPtr := reflect.New(typeInfo)
 	structElem := structPtr.Elem()
 
 	for i := 0; i < typeInfo.NumField(); i++ {
@@ -243,7 +226,32 @@ func (c *Container) shouldInject(field reflect.StructField) (bool, error) {
 	return true, nil
 }
 
-func (c *Container) validateFactoryCallback(callback any) (reflect.Type, error) {
+func (c *Container) Call(callback any) ([]reflect.Value, error) {
+	funcType := reflect.TypeOf(callback)
+	funcValue := reflect.ValueOf(callback)
+
+	var args []reflect.Value
+
+	for i := 0; i < funcType.NumIn(); i++ {
+		argType := funcType.In(i)
+		arg, err := c.ResolveType(argType)
+
+		if err != nil {
+			message := fmt.Sprintf("could not resolve argument #%d of callback; type %s could not be resolved: %s", i, argType, err)
+			return nil, errors.New(message)
+		}
+
+		if argType.Kind() != reflect.Pointer && argType.Kind() != reflect.Interface {
+			arg = arg.Elem()
+		}
+
+		args = append(args, arg)
+	}
+
+	return funcValue.Call(args), nil
+}
+
+func validateFactoryCallback(callback any) (reflect.Type, error) {
 	typeInfo := reflect.TypeOf(callback)
 
 	if typeInfo.Kind() != reflect.Func {

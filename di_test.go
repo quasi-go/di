@@ -269,9 +269,57 @@ func TestBindProvider(t *testing.T) {
 }
 
 func TestNoInject(t *testing.T) {
+	Reset()
+
 	a := Instance[Thing3]()
 
 	if a.Thing1NoInjectM != nil {
 		t.Error("Thing1NoInjectM should be nil")
+	}
+}
+
+func someFunction(thing1 *Thing1) {
+	thing1.name = "From invoked"
+}
+
+func TestInvoke(t *testing.T) {
+	Reset()
+
+	thing1 := &Thing1{name: "Initial name"}
+	BindInstance(thing1)
+	Invoke(someFunction)
+
+	if thing1.name != "From invoked" {
+		t.Error("thing1 should have been updated by someFunc")
+	}
+}
+
+func anotherFunction(thing1 *Thing1) (*Thing1, error) {
+	thing1.name = "from anotherFunction"
+	return thing1, nil
+}
+
+func TestCall(t *testing.T) {
+	Reset()
+
+	thing1 := &Thing1{name: "Initial name"}
+	BindInstance(thing1)
+
+	_, err := Call[Thing1Alt](anotherFunction)
+
+	if err == nil {
+		t.Error("Error expected")
+		return
+	}
+
+	anotherThing, err := Call[Thing1](anotherFunction)
+
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	if anotherThing.name != "from anotherFunction" {
+		t.Error("thing1 should have been updated by anotherFunction")
 	}
 }

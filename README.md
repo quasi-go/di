@@ -171,6 +171,29 @@ You can call `Reset()` to clear all bindings.
 di.Reset()
 ```
 
+### Call
+
+With `Call[C](func)` can call arbitrary functions of the type `func(...) (*T, error)`, where
+`...` represents an argument list that will be resolved by the container.
+
+```go
+func NewC(b *B) (*C, error) {
+    return &C{
+        B: *b,
+    }, nil
+}
+
+resolvedC, err3 := di.Call[C](NewC)
+```
+	
+### Invoke 
+
+If you don't care about the return value of a function, you can use `Invoke(func)` instead.
+
+```go
+di.Invoke(NewC)
+```
+
 ## Examples
 
 The example test above is implemented here: [example/tothepoint_test.go](example/tothepoint_test.go)
