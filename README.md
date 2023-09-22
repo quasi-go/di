@@ -146,7 +146,32 @@ resolvedA2 := di.Instance[A]()
 
 - `di.Instance[A]()` != `di.Instance(A)[]`
 
-## Example Tests
+### Resolve
+
+If you need to be able to catch errors that occur while resolving a type, you can use
+`Resolve[T]()`, instead of `Instance[T]()` which returns the instance along with an `error`.
+
+```go
+resolvedA3, err1 := di.Resolve[A]()
+```
+	
+### ResolveImpl
+
+And similarly `ResolveImpl[I]()` can be used in place of `Impl[I]()`.
+
+```go
+resolvedI4, err2 := di.ResolveImpl[I]()
+```
+
+### Reset
+
+You can call `Reset()` to clear all bindings.
+
+```go
+di.Reset()
+```
+
+## Examples
 
 The example test above is implemented here: [example/tothepoint_test.go](example/tothepoint_test.go)
 

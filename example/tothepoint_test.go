@@ -107,7 +107,20 @@ func TestAll(t *testing.T) {
 
 	resolvedA2 := di.Instance[A]()
 
-	// di.Instance[A]() != di.Instance(A)[]
+	// di.Instance[A]() != di.Instance[A]()
+
+	// If you need to be able to catch errors that occur while resolving a type, you can use
+	// `Resolve[T]()`, instead of `Instance[T]()` which returns the instance along with an `error`.
+
+	resolvedA3, err1 := di.Resolve[A]()
+
+	// And similarly `ResolveImpl[I]()` can be used in place of `Impl[I]()`.
+
+	resolvedI4, err2 := di.ResolveImpl[I]()
+
+	// You can call `Reset()` to clear all bindings.
+
+	di.Reset()
 
 	fmt.Println("resolvedA1: (", reflect.TypeOf(resolvedA1), ")", resolvedA1)
 	fmt.Println("resolvedB:  (", reflect.TypeOf(resolvedB), ")", resolvedB)
@@ -115,4 +128,6 @@ func TestAll(t *testing.T) {
 	fmt.Println("resolvedI2: (", reflect.TypeOf(resolvedI2), ")", resolvedI2)
 	fmt.Println("resolvedI3: (", reflect.TypeOf(resolvedI3), ")", resolvedI3)
 	fmt.Println("resolvedA2: (", reflect.TypeOf(resolvedA2), ")", resolvedA2)
+	fmt.Println("resolvedA3: (", reflect.TypeOf(resolvedA3), ")", resolvedA3, "err1: (", err1, ")")
+	fmt.Println("resolvedI4: (", reflect.TypeOf(resolvedI4), ")", resolvedI4, "err2: (", err2, ")")
 }
