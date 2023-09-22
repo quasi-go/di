@@ -3,11 +3,11 @@
 This first example showcases basic usage via a couple commonly used functions.
 
 `BindInstance()` stores the given instance and will automatically provide
-it back when attempting to `Resolve[T]()` an instance of the same type. You can
+it back when attempting to `Instance[T]()` an instance of the same type. You can
 choose to fully spell this call as `di.BindInstance[SimpleStruct](&dep)`
 if you prefer further clarity.
 
-`Resolve[T]()` will first look and see if it has been given any rules for
+`Instance[T]()` will first look and see if it has been given any rules for
 providing a pointer to an instance of type `T` (its returned value is of
 type `*T`). If so, it will follow that rule to provide an instance. In this
 case, we bound the type `ExampleStruct` to `&dep` above, so `resolved` points
@@ -37,7 +37,7 @@ func TestSimpleStruct(t *testing.T) {
 	}
 
 	di.BindInstance(&dep)
-	resolved, _ := di.Resolve[SimpleStruct]()
+	resolved := di.Instance[SimpleStruct]()
 
 	// `resolved` should be a pointer back to `dep`
 
@@ -65,12 +65,12 @@ func TestSimpleStruct(t *testing.T) {
 
 ## Implicit Resolution
 
-When no rule is set for a struct type passed to `Resolve[T]()`, it will
+When no rule is set for a struct type passed to `Instance[T]()`, it will
 attempt to implicitly build a new instance of type `T` and return a pointer `*T`
 to the new instance. It cycles through each member of the struct and will
 either execute an associated rule if one has been bound for the type
 (such as `di.BindInstance(&dep)` above) or it will attempt to recursively
-`Resolve[T]()` the child, if it is a struct.
+`Instance[T]()` the child, if it is a struct.
 
 Observe the process below.
 
@@ -82,7 +82,7 @@ type ExampleStruct struct {
 }
 
 func TestExampleStruct(t *testing.T) {
-	resolved, _ := di.Resolve[ExampleStruct]()
+	resolved := di.Instance[ExampleStruct]()
 
 	// `resolved` should be a pointer to a new instance of `ExampleStruct`
 
@@ -93,13 +93,13 @@ func TestExampleStruct(t *testing.T) {
 	}
 
 	// Because we used `BindInstance[T]()` in `TestSimpleStruct` above,
-	// each time we `Resolve[SimpleStruct]()` it will return a pointer to the
+	// each time we `Instance[SimpleStruct]()` it will return a pointer to the
 	// same instance as &dep in the first test.
 
-	dep, _ := di.Resolve[SimpleStruct]()
+	dep := di.Instance[SimpleStruct]()
 
-	// Behind the scenes, `Resolve[ExampleStruct]()` made a call to
-	// `di.Resolve[SimpleStruct]()` to populate `resolved.dependency`. We can see
+	// Behind the scenes, `Instance[ExampleStruct]()` made a call to
+	// `di.Instance[SimpleStruct]()` to populate `resolved.dependency`. We can see
 	// that they are identical.
 
 	if resolved.Dependency == *dep {
@@ -108,7 +108,7 @@ func TestExampleStruct(t *testing.T) {
 		t.Error("resolved.dependency should be the same SimpleStruct as dep.")
 	}
 
-	// `Resolve[T]()` is smart enough that it know to inject a `*T` or `T` based on the
+	// `Instance[T]()` is smart enough that it know to inject a `*T` or `T` based on the
 	// type of the struct member encountered.
 
 	if resolved.PtrToDependency == dep {
@@ -125,7 +125,7 @@ func TestExampleStruct(t *testing.T) {
 		t.Error("resolved.PtrToDependency.Name should be the same as when set above.")
 	}
 
-	// `Resolve[T]()` cannot resolve private members for you. In this case,
+	// `Instance[T]()` cannot resolve private members for you. In this case,
 	// `resolved.privateDependency` is `nil`.
 
 	if resolved.privateDependency == nil {
@@ -143,12 +143,12 @@ we implemented the method `GetName()` for `SimpleStruct`, which satisfies
 `TestInterface`. Now we can bind to `TestInterface` so that a `*SimpleStruct`
 will be provided when `TestInterface` is resolved.
 
-When we `ResolveImpl[TestInterface]()`, it will attempt to resolve `SimpleStruct`
-with `Resolve[SimpleStruct]()`. Same as any other call to `Resolve[T]()` this
+When we `Impl[TestInterface]()`, it will attempt to resolve `SimpleStruct`
+with `Instance[SimpleStruct]()`. Same as any other call to `Instance[T]()` this
 operation will follow any previous bindings to `SimpleStruct` if they exist
 (in this case, the same as the `dep` variables above), or will attempt to
-build a new instance if not. The call to `ResolveImpl[I]()` will return an instance
-of the provided interface `I`, as opposed to `Resolve[T]()`, which returns a `*T`.
+build a new instance if not. The call to `Impl[I]()` will return an instance
+of the provided interface `I`, as opposed to `Instance[T]()`, which returns a `*T`.
 
 ```go
 type TestInterface interface {
@@ -162,8 +162,8 @@ func (s *SimpleStruct) GetName() string {
 func TestBindType(t *testing.T) {
 	di.BindType[TestInterface, SimpleStruct]()
 
-	fromInterface, _ := di.ResolveImpl[TestInterface]() // Note the call to ResolveImpl
-	fromConcrete, _ := di.Resolve[SimpleStruct]()
+	fromInterface := di.Impl[TestInterface]() // Note the call to Impl
+	fromConcrete := di.Instance[SimpleStruct]()
 
 	// These two should be pointers to the same object.
 
@@ -192,9 +192,9 @@ with the instance instead of its concrete type. Note below that we're also
 overwriting the previous call to `BindType[TestInterface, SimpleStruct]`.
 This is allowed.
 
-Notice below we only update the binding to `TestInterface`. `Resolve[SimpleStruct]()`
-is unaffected. `di.ResolveImpl[TestInterface]()` was previously the same
-as calling `di.Resolve[SimpleStruct]()` because of `BindType[TestInterface, SimpleStruct]()`.
+Notice below we only update the binding to `TestInterface`. `Instance[SimpleStruct]()`
+is unaffected. `di.Impl[TestInterface]()` was previously the same
+as calling `di.Instance[SimpleStruct]()` because of `BindType[TestInterface, SimpleStruct]()`.
 Now `BindImpl[TestInterface](impl)` changed what `TestInterface` resolves to, but
 it left the binding to `SimpleStruct` unaffected.
 
@@ -206,9 +206,9 @@ func TestBindImpl(t *testing.T) {
 
 	di.BindImpl[TestInterface](impl)
 
-	// Now we can call `ResolveImpl[TestInterface]()` to get back our impl.
+	// Now we can call `Impl[TestInterface]()` to get back our impl.
 
-	resolved, _ := di.ResolveImpl[TestInterface]()
+	resolved := di.Impl[TestInterface]()
 
 	// These should be the same.
 
@@ -219,7 +219,7 @@ func TestBindImpl(t *testing.T) {
 	}
 
 	// Note that this is not the same result as out call to
-	// `ResolveImpl[TestInterface]()` above.
+	// `Impl[TestInterface]()` above.
 
 	if resolved.GetName() == "Not the same as our first test" {
 		fmt.Println("We're getting back the new message, as expected.")
@@ -227,7 +227,7 @@ func TestBindImpl(t *testing.T) {
 		t.Error("We should be getting back the new message here.")
 	}
 
-	original, _ := di.Resolve[SimpleStruct]()
+	original := di.Instance[SimpleStruct]()
 
 	if original.GetName() == "This is a test" {
 		fmt.Println("We're getting back the original message, as expected.")
@@ -243,7 +243,7 @@ If we have setup that needs to be performed after the construction of the object
 we can implement `Initializeable`, an interface that consists of a single method
 `Initialize()` that accepts no parameters and has no return value. This method
 will be called immediately after an instance of the type is built, but not necessarily
-each time `Resolve[T]()` or `ResolveImpl[I]()` is called.
+each time `Instance[T]()` or `Impl[I]()` is called.
 
 ```go
 type InitializedStruct struct {
@@ -257,7 +257,7 @@ func (i *InitializedStruct) Initialize() {
 func TestInitialize(t *testing.T) {
 	// We resolve `InitializedStruct` implicitly (with no bindings).
 
-	initialized, _ := di.Resolve[InitializedStruct]()
+	initialized := di.Instance[InitializedStruct]()
 
 	// Here we see that the `Initialize()` method was called automatically to set
 	// `initialized.Message`.
@@ -273,10 +273,10 @@ func TestInitialize(t *testing.T) {
 
 `BindProvider(func)` binds a function that will construct our resolved type.
 The library infers the type that we are binding from the callback's return type,
-and can use `Resolve[T]()` and resolve inject objects as the parameters of the function.
+and can use `Instance[T]()` and resolve inject objects as the parameters of the function.
 
 The arguments injected into the provider are resolved the same as a direct call to
-`Resolve[T]()` or `ResolveImpl[I]()`.
+`Instance[T]()` or `Impl[I]()`.
 
 A provider can be used for things that the library cannot resolve itself, such as
 setting private members like `.privateDependency` below.
@@ -284,13 +284,13 @@ setting private members like `.privateDependency` below.
 The first time we resolve `ExampleStruct` it will invoke the func passed to create
 an instance.
 
-The second time we invoke `Resolve[ExampleStruct]()` it does not rerun the provider,
+The second time we invoke `Instance[ExampleStruct]()` it does not rerun the provider,
 but instead returns the same `*ExampleStruct` at it constructed the first time.
 
 ```go
 func TestBindProvider(t *testing.T) {
 	di.BindProvider(func(dep1 *SimpleStruct, dep2 TestInterface) (*ExampleStruct, error) {
-		resolved1, _ := di.Resolve[SimpleStruct]()
+		resolved1 := di.Instance[SimpleStruct]()
 
 		if resolved1 == dep1 && resolved1.GetName() == "This is a test" {
 			fmt.Println("resolved is the same as if we resolve SimpleStruct directly, as expected.")
@@ -298,7 +298,7 @@ func TestBindProvider(t *testing.T) {
 			t.Error("resolved should be the same as if we resolve SimpleStruct directly.")
 		}
 
-		resolved2, _ := di.ResolveImpl[TestInterface]()
+		resolved2 := di.Impl[TestInterface]()
 
 		if resolved2 == dep2 && resolved2.GetName() == "Not the same as our first test" {
 			fmt.Println("resolved is the same as if we resolve TestInterface directly, as expected.")
@@ -311,7 +311,7 @@ func TestBindProvider(t *testing.T) {
 		}, nil
 	})
 
-	resolved, _ := di.Resolve[ExampleStruct]()
+	resolved := di.Instance[ExampleStruct]()
 
 	if reflect.TypeOf(resolved) == di.Type[*ExampleStruct]() {
 		fmt.Println("resolved is a pointer to ExampleStruct, as expected.")
@@ -325,7 +325,7 @@ func TestBindProvider(t *testing.T) {
 		t.Error("resolved should have the original message set.")
 	}
 
-	again, _ := di.Resolve[ExampleStruct]()
+	again := di.Instance[ExampleStruct]()
 
 	if resolved == again {
 		fmt.Println("resolved and again point to the same ExampleStruct, as expected.")
@@ -353,8 +353,8 @@ func TestBindFactory(t *testing.T) {
 		}, nil
 	})
 
-	built1, _ := di.Resolve[SimpleStruct]()
-	built2, _ := di.Resolve[SimpleStruct]()
+	built1 := di.Instance[SimpleStruct]()
+	built2 := di.Instance[SimpleStruct]()
 
 	if built1 != built2 {
 		fmt.Println("The two results don't point to the same instance, as expected.")
