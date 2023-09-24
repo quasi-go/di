@@ -69,26 +69,19 @@ func main() {
 	// Let's demonstrate binding concrete implementations to interfaces.
 
 	di.BindType[services.IConfigToString, services.AppConfigToString]()
-	configToString := di.Impl[services.IConfigToString]() // Note that we use `Impl[T]()` here instead of `Instance[T]()`
-
-	fmt.Println("This will print AppConfig:", configToString.ToString())
+	appConfigToString := di.Impl[services.IConfigToString]() // Note that we use `Impl[T]()` here instead of `Instance[T]()`
 
 	// We can override our previous binding to `services.IConfigToString`.
 
 	di.BindType[services.IConfigToString, services.DBConfigToString]()
-	configToString = di.Impl[services.IConfigToString]() // Note that we use `Impl[T]()` here instead of `Instance[T]()`
-
-	fmt.Println("This will print DBConfig:", configToString.ToString())
-
-	di.GetContainer().SetLogger(nil)
+	dbConfigToString := di.Impl[services.IConfigToString]()
 
 	// Finally, we can demonstrate implicit construction of structs with interface dependencies.
 	// The `services.IConfigToString` dependency will be satisfied by our most recent binding to `services.DBConfigToString`.
 
-	// Note that even though it had an interface dependency,
-	// `services.ConfigReader` is a struct to `Instance[T]()` is used.
+	configReader := di.Instance[services.ConfigReader]() // `services.ConfigReader` is a struct so `Instance[T]()` is used
 
-	configReader := di.Instance[services.ConfigReader]()
-
+	fmt.Println("This will print AppConfig:", appConfigToString.ToString())
+	fmt.Println("This will print DBConfig:", dbConfigToString.ToString())
 	fmt.Println("This will print DBConfig again:", configReader.Config.ToString())
 }
