@@ -36,12 +36,6 @@ func (c *C) Initialize() {
 
 type I interface{}
 
-func NewC(b *B) (*C, error) {
-	return &C{
-		B: *b,
-	}, nil
-}
-
 func TestAll(t *testing.T) {
 	// `BindInstance[T](inst)` bind type `T` to the passed `inst`.
 
@@ -107,7 +101,7 @@ func TestAll(t *testing.T) {
 
 	di.BindFactory(func() (*A, error) {
 		return &A{
-			Name: "Created from factory",
+			Name: "Alfred",
 		}, nil
 	})
 
@@ -124,18 +118,18 @@ func TestAll(t *testing.T) {
 
 	resolvedI4, err2 := di.ResolveImpl[I]()
 
+	// To inject resolved instances into arbitrary code us Invoke(). Note that the callback can
+	// set values in the outer scope.
+
+	var name string
+
+	di.Invoke(func(injected A) {
+		name = injected.Name
+	})
+
 	// You can call `Reset()` to clear all bindings.
 
 	di.Reset()
-
-	// With `Call[C](func)` can call arbitrary functions of the type `func(...) (*T, error)`, where
-	// `...` represents an argument list that will be resolved by the container.
-
-	resolvedC, err3 := di.Call[C](NewC)
-
-	// If you don't care about the return value of a function, you can use `Invoke(func)` instead.
-
-	di.Invoke(NewC)
 
 	fmt.Println("resolvedA1: (", reflect.TypeOf(resolvedA1), ")", resolvedA1)
 	fmt.Println("resolvedB:  (", reflect.TypeOf(resolvedB), ")", resolvedB)
@@ -145,5 +139,5 @@ func TestAll(t *testing.T) {
 	fmt.Println("resolvedA2: (", reflect.TypeOf(resolvedA2), ")", resolvedA2)
 	fmt.Println("resolvedA3: (", reflect.TypeOf(resolvedA3), ")", resolvedA3, "err1: (", err1, ")")
 	fmt.Println("resolvedI4: (", reflect.TypeOf(resolvedI4), ")", resolvedI4, "err2: (", err2, ")")
-	fmt.Println("resolvedC: (", reflect.TypeOf(resolvedC), ")", resolvedC, "err3: (", err3, ")")
+	fmt.Println("name var in scope: ", name)
 }

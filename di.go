@@ -150,39 +150,6 @@ func Reset() {
 	resetContainer()
 }
 
-func Call[T any](callback any) (*T, error) {
-	callbackType := reflect.TypeOf(callback)
-	nReturn := callbackType.NumOut()
-
-	if nReturn != 2 || callbackType.Out(0) != Type[*T]() || callbackType.Out(1) != Type[error]() {
-		return new(T), errors.New("the callback must return a *" + Type[T]().String() + "and an error")
-	}
-
-	returnValues, err := GetContainer().Call(callback)
-
-	if err != nil {
-		return new(T), err
-	}
-
-	convertedT, err := Convert[T](returnValues[0])
-
-	if err != nil {
-		return new(T), err
-	}
-
-	returnedErr := returnValues[1].Interface()
-
-	if returnedErr == nil {
-		return convertedT, nil
-	}
-
-	if convertedErr, ok := returnedErr.(error); ok {
-		return convertedT, convertedErr
-	}
-
-	return new(T), errors.New("returned value could not be converted to error")
-}
-
 func Invoke(callback any) {
 	_, err := GetContainer().Call(callback)
 
