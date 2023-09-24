@@ -21,7 +21,7 @@ func main() {
 
 	di.BindInstance(&config.AppConfig{
 		VarA: "This will be sent as an argument to the query from ServiceA",
-		VarB: "This will be sent as an argument to the query from ServiceA",
+		VarB: "This will be sent as an argument to the query from ServiceB",
 	})
 
 	di.BindInstance(&config.DBConfig{

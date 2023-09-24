@@ -11,7 +11,7 @@ func TestServices(t *testing.T) {
 	db := &sql.DB{}
 	appConfig := config.AppConfig{}
 	dbConfig := config.DBConfig{}
-	
+
 	a := ServiceA{db, appConfig}
 	b := ServiceB{db, appConfig}
 
