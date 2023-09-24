@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/quasi-go/di"
 	"github.com/quasi-go/di/sample_app/config"
-	"github.com/quasi-go/di/sample_app/services"
+	s "github.com/quasi-go/di/sample_app/services"
 	"github.com/quasi-go/di/sample_app/sql"
 	"log"
 	"os"
@@ -53,20 +53,20 @@ func main() {
 		return db, nil
 	})
 
-	// We can already construct instances of `services.ServiceA` and `services.ServiceB`, even without explicit bindings.
+	// We can already construct instances of `ServiceA` and `ServiceB`, even without explicit bindings.
 
-	serviceA := di.Instance[services.ServiceA]()
-	serviceB := di.Instance[services.ServiceB]()
+	serviceA := di.Instance[s.ServiceA]()
+	serviceB := di.Instance[s.ServiceB]()
 
 	serviceA.DoSomethingInTheDatabase()
 	serviceB.DoSomethingElseInTheDatabase()
 
 	// Let's demonstrate binding concrete implementations to interfaces.
 
-	di.BindType[services.IConfigToString, services.AppConfigToString]()
-	//di.BindType[services.IConfigToString, services.DBConfigToString]() // uncomment this line to change what is printed below
+	di.BindType[s.IConfigToString, s.AppConfigToString]()
+	//di.BindType[s.IConfigToString, s.DBConfigToString]() // uncomment this line to change what is printed below
 
-	configReader := di.Instance[services.ConfigReader]()
+	configReader := di.Instance[s.ConfigReader]()
 
 	fmt.Println("This will print the bound IConfigToString :", configReader.Config.ToString())
 }
