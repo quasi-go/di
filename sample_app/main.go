@@ -5,7 +5,7 @@ import (
 	"github.com/quasi-go/di"
 	"github.com/quasi-go/di/sample_app/config"
 	s "github.com/quasi-go/di/sample_app/services"
-	"github.com/quasi-go/di/sample_app/sql"
+	"github.com/quasi-go/di/sample_app/sql" // this is a stub of "database/sql"
 	"log"
 	"os"
 )
