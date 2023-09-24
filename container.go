@@ -3,7 +3,18 @@ package di
 import (
 	"errors"
 	"fmt"
+	"log"
 	"reflect"
+)
+
+const (
+	LOG_LEVEL_NONE    = 0
+	LOG_LEVEL_ERROR   = 1
+	LOG_LEVEL_WARNING = 2
+	LOG_LEVEL_NOTICE  = 4
+	LOG_LEVEL_DEFAULT = 7 // LOG_LEVEL_ERRORS_ONLY & LOG_LEVEL_WARNINGS_ONLY
+	LOG_LEVEL_TRACE   = 8 // LOG_LEVEL_ERRORS_ONLY & LOG_LEVEL_WARNINGS_ONLY
+	LOG_LEVEL_ALL     = 15
 )
 
 type Rule interface {
@@ -72,7 +83,9 @@ func (r *providerRule) Resolve(c *Container) (reflect.Value, error) {
 type ruleStore map[Id]Rule
 
 type Container struct {
-	rules ruleStore
+	rules    ruleStore
+	logger   *log.Logger
+	logLevel int
 }
 
 var currentContainer = NewContainer()
@@ -87,7 +100,8 @@ func GetContainer() *Container {
 
 func NewContainer() *Container {
 	return &Container{
-		rules: make(ruleStore),
+		rules:    make(ruleStore),
+		logLevel: LOG_LEVEL_DEFAULT,
 	}
 }
 
@@ -95,7 +109,19 @@ func resetContainer() {
 	SetContainer(NewContainer())
 }
 
+func (c *Container) SetLogger(logger *log.Logger) {
+	c.logger = logger
+}
+
+func (c *Container) SetLogLevel(logLevel int) {
+	c.logLevel = logLevel
+}
+
 func (c *Container) SetRule(key Id, rule Rule) {
+	if c.logger != nil && hasLogLevel(c.logLevel, LOG_LEVEL_TRACE) {
+		c.logger.Printf("Setting %s as (%s): %+v", key, reflect.TypeOf(rule).String(), rule)
+	}
+
 	c.rules[key] = rule
 }
 
@@ -110,6 +136,10 @@ func (c *Container) GetRule(key Id) Rule {
 }
 
 func (c *Container) ResolveType(typeInfo reflect.Type) (reflect.Value, error) {
+	if c.logger != nil && hasLogLevel(c.logLevel, LOG_LEVEL_TRACE) {
+		c.logger.Printf("Resolving %s", typeInfo.String())
+	}
+
 	if typeInfo.Kind() == reflect.Pointer {
 		typeInfo = typeInfo.Elem()
 	}
@@ -117,6 +147,10 @@ func (c *Container) ResolveType(typeInfo reflect.Type) (reflect.Value, error) {
 	typeId := Id(typeInfo.String())
 
 	if !c.HasRule(typeId) {
+		if c.logger != nil && hasLogLevel(c.logLevel, LOG_LEVEL_TRACE) {
+			c.logger.Printf("Rule %s not found", typeInfo.String())
+		}
+
 		built, err := c.BuildType(typeInfo)
 
 		if err != nil {
@@ -130,9 +164,17 @@ func (c *Container) ResolveType(typeInfo reflect.Type) (reflect.Value, error) {
 }
 
 func (c *Container) BuildType(typeInfo reflect.Type) (reflect.Value, error) {
+	if c.logger != nil && hasLogLevel(c.logLevel, LOG_LEVEL_TRACE) {
+		c.logger.Printf("Building %s", typeInfo)
+	}
+
 	structPtr := reflect.New(typeInfo)
 
 	if typeInfo.Kind() != reflect.Struct {
+		if c.logger != nil && hasLogLevel(c.logLevel, LOG_LEVEL_TRACE) {
+			c.logger.Printf("%s is not a struct, returning without resolving children", typeInfo.String())
+		}
+
 		return structPtr, nil
 	}
 
@@ -144,11 +186,32 @@ func (c *Container) BuildType(typeInfo reflect.Type) (reflect.Value, error) {
 		inject, err := c.shouldInject(typeField)
 
 		if err != nil {
+			if c.logger != nil && hasLogLevel(c.logLevel, LOG_LEVEL_ERROR) {
+				c.logger.Printf("ERROR: %s", err)
+			}
+
 			return reflect.Zero(typeInfo), err
 		}
 
-		if !inject || !structField.CanSet() {
+		if !inject {
+			if c.logger != nil && hasLogLevel(c.logLevel, LOG_LEVEL_TRACE) {
+				c.logger.Printf("Tagged as @noinject, skipping %s", typeField.Name)
+			}
+
 			continue
+		}
+
+		if !structField.CanSet() {
+			if c.logger != nil && hasLogLevel(c.logLevel, LOG_LEVEL_WARNING) {
+				c.logger.Printf("WARNING: Can't set private member `%s` of `%s`. You need to make this member public to "+
+					"inject it or add the tag `inject:\"@noinject\"` to mark that the field is skipped", typeField.Name, typeInfo.String())
+			}
+
+			continue
+		}
+
+		if c.logger != nil && hasLogLevel(c.logLevel, LOG_LEVEL_TRACE) {
+			c.logger.Printf("Resolving child %s", typeField.Name)
 		}
 
 		childType := typeField.Type
@@ -156,6 +219,9 @@ func (c *Container) BuildType(typeInfo reflect.Type) (reflect.Value, error) {
 		isPointer := childType.Kind() == reflect.Pointer
 
 		if isInterface && !c.HasRule(Id(childType.String())) {
+			if c.logger != nil && hasLogLevel(c.logLevel, LOG_LEVEL_TRACE) {
+				c.logger.Printf("%s is an interface but has no rule set, skipping", childType.String())
+			}
 			continue
 		}
 
@@ -166,17 +232,33 @@ func (c *Container) BuildType(typeInfo reflect.Type) (reflect.Value, error) {
 		builtChild, err := c.ResolveType(childType)
 
 		if err != nil {
+			if c.logger != nil && hasLogLevel(c.logLevel, LOG_LEVEL_TRACE) {
+				c.logger.Printf("ERROR: %s", err)
+			}
+
 			return reflect.Zero(typeInfo), err
 		}
 
+		var elem reflect.Value
+
 		if isPointer || isInterface {
-			structField.Set(builtChild)
+			elem = builtChild
 		} else {
-			structField.Set(builtChild.Elem())
+			elem = builtChild.Elem()
 		}
+
+		if c.logger != nil && hasLogLevel(c.logLevel, LOG_LEVEL_TRACE) {
+			c.logger.Printf("Setting child %#v", elem.Interface())
+		}
+
+		structField.Set(elem)
 	}
 
 	if structPtr.Type().Implements(Type[Initializable]()) {
+		if c.logger != nil && hasLogLevel(c.logLevel, LOG_LEVEL_TRACE) {
+			c.logger.Printf("Initializing %s", structPtr.Type().String())
+		}
+
 		structPtr.MethodByName("Initialize").Call([]reflect.Value{})
 	}
 
@@ -277,4 +359,8 @@ func validateFactoryCallback(callback any) (reflect.Type, error) {
 	}
 
 	return reflect.TypeOf(nil), errors.New("callback must return an interface or a pointer to the constructed value")
+}
+
+func hasLogLevel(value int, test int) bool {
+	return (value & test) != 0
 }

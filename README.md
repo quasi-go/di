@@ -176,6 +176,15 @@ di.Invoke(func(injected A) {
 })
 ```
 
+### SetLogger
+
+You can set a logger.
+
+```go
+logger := log.New(os.Stdout, "DI: ", 0)
+di.SetLogger(logger)
+```
+
 ### Reset
 
 You can call `Reset()` to clear all bindings.
@@ -186,7 +195,9 @@ di.Reset()
 
 ## Examples
 
-The example test above is implemented here: [example/tothepoint_test.go](example/tothepoint_test.go)
+The examples above are implemented in a valid test here: [example/tothepoint_test.go](example/tothepoint_test.go)
+
+You can see usage within a sample app here: [sample_app/main.go](sample_app/main.go)
 
 See [example/example_test.go](example/example_test.go) to see and run additional examples.
 

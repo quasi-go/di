@@ -3,6 +3,7 @@ package di
 import (
 	"errors"
 	"fmt"
+	"log"
 	"reflect"
 )
 
@@ -156,6 +157,14 @@ func Invoke(callback any) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func SetLogger(logger *log.Logger) {
+	GetContainer().SetLogger(logger)
+}
+
+func SetLogLevel(logLevel int) {
+	GetContainer().SetLogLevel(logLevel)
 }
 
 func validateImpl[T any, U any]() {
