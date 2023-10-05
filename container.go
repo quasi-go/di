@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"reflect"
+	"sync"
 )
 
 const (
@@ -83,6 +84,7 @@ func (r *providerRule) Resolve(c *Container) (reflect.Value, error) {
 type ruleStore map[Id]Rule
 
 type Container struct {
+	mutex    sync.Mutex
 	rules    ruleStore
 	logger   *log.Logger
 	logLevel int
@@ -122,16 +124,27 @@ func (c *Container) SetRule(key Id, rule Rule) {
 		c.logger.Printf("Setting %s as (%s): %+v", key, reflect.TypeOf(rule).String(), rule)
 	}
 
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
 	c.rules[key] = rule
 }
 
 func (c *Container) HasRule(key Id) bool {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
 	_, exists := c.rules[key]
+
 	return exists
 }
 
 func (c *Container) GetRule(key Id) Rule {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
 	value, _ := c.rules[key]
+
 	return value
 }
 
