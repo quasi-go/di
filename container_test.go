@@ -7,17 +7,38 @@ import (
 	"testing"
 )
 
+func TestGetSetContainerFails(t *testing.T) {
+	resetContainer()
+	defer func() {
+		r := recover()
+		if r == nil {
+			t.Errorf("The code did not panic")
+		}
+	}()
+
+	BindAuto[Thing3]()
+	object1, err := Resolve[Thing3]()
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	// This fails because Thing1p2 is nil
+	t.Log(object1.Thing1p2.name)
+}
+
 func TestGetSetContainer(t *testing.T) {
 	resetContainer()
-	defaultContainer := GetContainer()
 
 	thing1 := Thing1{name: "THING1"}
 	BindInstance(&thing1)
 
+	BindAuto[Thing3]()
+	BindAuto[Embed1]()
 	object1, err := Resolve[Thing3]()
 
 	if err != nil {
-		fmt.Println(err)
+		t.Fatal(err)
 	}
 
 	if object1.Thing1m2.name != "THING1" {
@@ -25,17 +46,10 @@ func TestGetSetContainer(t *testing.T) {
 	}
 
 	SetContainer(NewContainer())
-	object2, _ := Resolve[Thing3]()
+	_, err = Resolve[Thing3]()
 
-	if object2.Thing1m2.name != "" {
-		t.Error("Failed recalling correct Thing1 instance after reset from default")
-	}
-
-	SetContainer(defaultContainer)
-	object3, _ := Resolve[Thing3]()
-
-	if object3.Thing1m2.name != "THING1" {
-		t.Error("Failed recalling correct Thing1 instance after reset back to default")
+	if err == nil {
+		t.Error("Should fail after resetting to default")
 	}
 }
 
@@ -125,4 +139,9 @@ func TestBuildTypeConcurrent(t *testing.T) {
 	}
 
 	wg.Wait()
+}
+
+func TestIsNil(t *testing.T) {
+	var v reflect.Value
+	fmt.Println(v == reflect.Value{})
 }

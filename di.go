@@ -95,9 +95,23 @@ func BindImpl[T any, U any](impl *U) {
 func BindType[T any, U any]() {
 	validateImpl[T, U]()
 
+	if !GetContainer().HasRule(TypeId[U]()) {
+		GetContainer().SetRule(
+			TypeId[U](),
+			&autoRule{typeTo: Type[U]()},
+		)
+	}
+
 	GetContainer().SetRule(
 		TypeId[T](),
 		&typeRule{Type[U]()},
+	)
+}
+
+func BindAuto[T any]() {
+	GetContainer().SetRule(
+		TypeId[T](),
+		&autoRule{typeTo: Type[T]()},
 	)
 }
 

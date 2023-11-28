@@ -49,8 +49,9 @@ func TestAll(t *testing.T) {
 	// `resolvedA` is a `*A`
 	// `resolvedA` == `a`
 
-	// Even without explicitly binding a type, the library can implicitly build new structs
+	// The library can automatically build new structs by recursively walking its children for dependencies it can create.
 
+	di.BindAuto[B]()
 	resolvedB := di.Instance[B]()
 
 	// Private members are not set by the library, so `resolvedB.privateDep` === nil

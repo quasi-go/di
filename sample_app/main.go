@@ -53,7 +53,12 @@ func main() {
 		return db, nil
 	})
 
-	// We can already construct instances of `ServiceA` and `ServiceB`, even without explicit bindings.
+	// We can now setup our automatic rules.
+
+	di.BindType[s.IConfigToString, s.AppConfigToString]()
+	di.BindAuto[s.ConfigReader]()
+	di.BindAuto[s.ServiceA]()
+	di.BindAuto[s.ServiceB]()
 
 	serviceA := di.Instance[s.ServiceA]()
 	serviceB := di.Instance[s.ServiceB]()
@@ -63,9 +68,7 @@ func main() {
 
 	// Let's demonstrate binding concrete implementations to interfaces.
 
-	di.BindType[s.IConfigToString, s.AppConfigToString]()
 	//di.BindType[s.IConfigToString, s.DBConfigToString]() // uncomment this line to change what is printed below
-
 	configReader := di.Instance[s.ConfigReader]()
 
 	fmt.Println("This will print the bound IConfigToString :", configReader.Config.ToString())

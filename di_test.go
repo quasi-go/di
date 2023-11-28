@@ -31,7 +31,7 @@ type Thing3 struct {
 	Embed1
 	Thing1p2        *Thing1
 	Thing2m         Thing2
-	Thing1NoInjectM *Thing1 `inject:"@noinject"`
+	Thing1NoInjectM *Thing1 `inject:"@none"`
 	SomeNumberm     int
 	Itestm          ITest
 }
@@ -43,6 +43,7 @@ type ITest interface {
 func TestResolve(t *testing.T) {
 	Reset()
 
+	BindAuto[Thing1]()
 	thing1, err := Resolve[Thing1]()
 
 	if err != nil {
@@ -53,10 +54,11 @@ func TestResolve(t *testing.T) {
 		t.Error("Failed asserting Thing1")
 	}
 
+	BindAuto[Thing3]()
 	thing3, err := Resolve[Thing3]()
 
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
 	if reflect.TypeOf(thing3) != Type[*Thing3]() {
@@ -79,6 +81,7 @@ func TestResolve(t *testing.T) {
 func TestInstance(t *testing.T) {
 	Reset()
 
+	BindAuto[Thing1]()
 	inst := Instance[Thing1]()
 	resolved, _ := Resolve[Thing1]()
 
@@ -104,10 +107,12 @@ func TestBindInstance(t *testing.T) {
 
 	thing1 := &Thing1{name: "THING1"}
 	BindInstance(thing1)
+	BindAuto[Embed1]()
+	BindAuto[Thing3]()
 	thing3, err := Resolve[Thing3]()
 
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
 	if reflect.TypeOf(thing3) != Type[*Thing3]() {
@@ -271,6 +276,9 @@ func TestBindProvider(t *testing.T) {
 func TestNoInject(t *testing.T) {
 	Reset()
 
+	BindAuto[Thing1]()
+	BindAuto[Embed1]()
+	BindAuto[Thing3]()
 	a := Instance[Thing3]()
 
 	if a.Thing1NoInjectM != nil {

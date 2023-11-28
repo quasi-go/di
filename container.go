@@ -38,6 +38,28 @@ func (r *instanceRule) Resolve(_ *Container) (reflect.Value, error) {
 	return r.instance, nil
 }
 
+type autoRule struct {
+	typeTo   reflect.Type
+	instance reflect.Value
+}
+
+func (r *autoRule) Resolve(c *Container) (reflect.Value, error) {
+	var nv reflect.Value
+
+	if r.instance != nv {
+		return r.instance, nil
+	}
+
+	v, err := c.BuildType(r.typeTo)
+
+	if err != nil {
+		return reflect.Value{}, err
+	}
+
+	r.instance = v
+	return v, err
+}
+
 type factoryRule struct {
 	callback any
 }
@@ -160,17 +182,11 @@ func (c *Container) ResolveType(typeInfo reflect.Type) (reflect.Value, error) {
 	typeId := Id(typeInfo.String())
 
 	if !c.HasRule(typeId) {
+		err := fmt.Errorf("rule %s not found", typeInfo.String())
 		if c.logger != nil && hasLogLevel(c.logLevel, LOG_LEVEL_TRACE) {
-			c.logger.Printf("Rule %s not found", typeInfo.String())
+			c.logger.Print(err)
 		}
-
-		built, err := c.BuildType(typeInfo)
-
-		if err != nil {
-			return reflect.Zero(typeInfo), err
-		}
-
-		c.SetRule(typeId, &instanceRule{built})
+		return reflect.Zero(typeInfo), err
 	}
 
 	return c.GetRule(typeId).Resolve(c)
@@ -208,16 +224,7 @@ func (c *Container) BuildType(typeInfo reflect.Type) (reflect.Value, error) {
 
 		if !inject {
 			if c.logger != nil && hasLogLevel(c.logLevel, LOG_LEVEL_TRACE) {
-				c.logger.Printf("Tagged as @noinject, skipping %s", typeField.Name)
-			}
-
-			continue
-		}
-
-		if !structField.CanSet() {
-			if c.logger != nil && hasLogLevel(c.logLevel, LOG_LEVEL_WARNING) {
-				c.logger.Printf("WARNING: Can't set private member `%s` of `%s`. You need to make this member public to "+
-					"inject it or add the tag `inject:\"@noinject\"` to mark that the field is skipped", typeField.Name, typeInfo.String())
+				c.logger.Printf("Tagged as @none, skipping %s", typeField.Name)
 			}
 
 			continue
@@ -240,6 +247,19 @@ func (c *Container) BuildType(typeInfo reflect.Type) (reflect.Value, error) {
 
 		if isPointer {
 			childType = childType.Elem()
+		}
+
+		if !c.HasRule(Id(childType.String())) {
+			continue
+		}
+
+		if !structField.CanSet() {
+			if c.logger != nil && hasLogLevel(c.logLevel, LOG_LEVEL_WARNING) {
+				c.logger.Printf("WARNING: Can't set private member `%s` of `%s`. You need to make this member public to "+
+					"inject it or add the tag `inject:\"@none\"` to mark that the field is skipped", typeField.Name, typeInfo.String())
+			}
+
+			continue
 		}
 
 		builtChild, err := c.ResolveType(childType)
@@ -300,7 +320,7 @@ func (c *Container) shouldInject(field reflect.StructField) (bool, error) {
 	switch injectTag {
 	case "":
 		inject = true
-	case "@noinject":
+	case "@none":
 		return false, nil
 	default:
 		errorMessage := fmt.Sprintf("Invalid `inject` tag value \"%s\" on member %s",

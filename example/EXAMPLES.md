@@ -63,14 +63,13 @@ func TestSimpleStruct(t *testing.T) {
 }
 ```
 
-## Implicit Resolution
+## Automatic Resolution
 
-When no rule is set for a struct type passed to `Instance[T]()`, it will
-attempt to implicitly build a new instance of type `T` and return a pointer `*T`
+When an auto rule is set for a struct type passed to `Instance[T]()`, it will
+attempt to build a new instance of type `T` and return a pointer `*T`
 to the new instance. It cycles through each member of the struct and will
 either execute an associated rule if one has been bound for the type
-(such as `di.BindInstance(&dep)` above) or it will attempt to recursively
-`Instance[T]()` the child, if it is a struct.
+(such as `di.BindInstance(&dep)` above).
 
 Observe the process below.
 
@@ -82,6 +81,7 @@ type ExampleStruct struct {
 }
 
 func TestExampleStruct(t *testing.T) {
+    di.BindAuto[ExampleStruct]()
 	resolved := di.Instance[ExampleStruct]()
 
 	// `resolved` should be a pointer to a new instance of `ExampleStruct`
@@ -255,8 +255,8 @@ func (i *InitializedStruct) Initialize() {
 }
 
 func TestInitialize(t *testing.T) {
-	// We resolve `InitializedStruct` implicitly (with no bindings).
-
+    // We resolve `InitializedStruct` automatically.
+    di.BindAuto[InitializedStruct]()
 	initialized := di.Instance[InitializedStruct]()
 
 	// Here we see that the `Initialize()` method was called automatically to set

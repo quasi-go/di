@@ -65,11 +65,12 @@ func (b *B) Initialize() {
 }
 ```
 
-### Implicit Resolution
+### Automatic Resolution
 
-Even without explicitly binding a type, the library can implicitly build new structs
+The library can automatically build new structs by recursively walking its children for dependencies it can create.
 
 ```go
+di.BindAuto[B]()
 resolvedB := di.Instance[B]()
 ```
 
